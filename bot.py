@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
+# 🔗 Sua lista afiliada
 URL = "https://meli.la/2xe3Uw2"
 
 headers = {
@@ -10,18 +11,24 @@ headers = {
 
 print("🔎 Acessando lista...")
 
-r = requests.get(URL, headers=headers, allow_redirects=True)
-html = r.text
+# pega HTML da página
+response = requests.get(URL, headers=headers, allow_redirects=True)
+html = response.text
 
-# 🔥 pega IDs tipo MLB123456
+# 🔥 extrai IDs dos produtos (MLBxxxx)
 ids = list(set(re.findall(r"MLB\d+", html)))
 
-print(f"Produtos encontrados: {len(ids)}")
+print(f"📦 Produtos encontrados: {len(ids)}")
 
+
+# 🔎 função para buscar dados na API
 def get_produto(item_id):
     url = f"https://api.mercadolibre.com/items/{item_id}"
-    return requests.get(url).json()
+    r = requests.get(url)
+    return r.json()
 
+
+# 🧠 função para montar mensagem
 def formatar(prod):
     titulo = prod.get("title")
     preco = prod.get("price")
@@ -31,18 +38,22 @@ def formatar(prod):
     if not titulo or not preco:
         return None
 
-    desconto = 0
+    # calcula desconto
     if original:
         desconto = int((original - preco) / original * 100)
+        preco_texto = f"De R$ {original} por R$ {preco} ({desconto}% OFF)"
+    else:
+        desconto = 0
+        preco_texto = f"R$ {preco}"
 
     # 🔥 filtro inteligente
-    if desconto < 30:
+    if desconto < 20 and preco > 100:
         return None
 
     msg = f"""🔥 SUPER OFERTA
 
 🛍️ {titulo}
-💰 De R$ {original} por R$ {preco} ({desconto}% OFF)
+💰 {preco_texto}
 
 👉 {link}
 
@@ -50,20 +61,28 @@ def formatar(prod):
 """
     return msg
 
+
+# 🚀 processa produtos
 mensagens = []
 
 for item in ids:
     try:
-        p = get_produto(item)
-        msg = formatar(p)
+        produto = get_produto(item)
+        msg = formatar(produto)
+
         if msg:
             mensagens.append(msg)
-    except:
-        pass
 
-print("Promoções boas:", len(mensagens))
+    except Exception as e:
+        print(f"Erro no item {item}: {e}")
 
+
+print(f"🔥 Promoções boas: {len(mensagens)}")
+
+
+# 💾 salva arquivo
 with open("promocoes.txt", "w", encoding="utf-8") as f:
     f.write("\n\n".join(mensagens))
+
 
 print("✅ Arquivo pronto para WhatsApp!")

@@ -12,7 +12,7 @@ print("🔎 Acessando lista...")
 response = requests.get(URL, headers=headers, allow_redirects=True)
 html = response.text
 
-# pega possíveis IDs
+# pega IDs possíveis
 ids = list(set(re.findall(r"MLB\d+", html)))
 
 print(f"📦 IDs encontrados: {len(ids)}")
@@ -24,7 +24,6 @@ def get_produto(item_id):
         r = requests.get(url)
         data = r.json()
 
-        # valida produto
         if "title" not in data:
             return None
 
@@ -41,13 +40,9 @@ def formatar(prod):
     if not titulo or not preco:
         return None
 
-    return f"""🔥 *OFERTA* 🔥
-
-🛍️ {titulo}
+    return f"""🛍️ {titulo}
 💰 R$ {preco}
-
 👉 {link}
-
 """
 
 
@@ -63,16 +58,16 @@ for item in ids:
             mensagens.append(msg)
 
 
-print(f"🔥 Produtos válidos: {len(mensagens)}")
+print(f"✅ Produtos válidos: {len(mensagens)}")
 
 
-# 🚨 GARANTIA: nunca fica vazio
+# fallback (garante que nunca fica vazio)
 if not mensagens:
-    mensagens.append("⚠️ Nenhuma promoção encontrada dessa vez.\nTente novamente mais tarde.")
+    mensagens.append("⚠️ Nenhum produto encontrado (lista pode estar bloqueada).")
 
 
 with open("promocoes.txt", "w", encoding="utf-8") as f:
     f.write("\n\n".join(mensagens))
 
 
-print("✅ Arquivo gerado!")
+print("📁 Arquivo gerado com sucesso!")

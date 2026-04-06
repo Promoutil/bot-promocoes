@@ -1,96 +1,63 @@
-import requests
-import re
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+import time
 
-# 🔗 seus links afiliados (meli.la)
-LINKS = [
-    "https://meli.la/2zCvW4r",
-    "https://meli.la/11dVZRZ",
-    "https://meli.la/2UqPKkk",
-    "https://meli.la/2aYAQiX",
-    "https://meli.la/2f7eTm3"
-]
+URL = "https://www.mercadolivre.com.br/social/novaazul"
 
-headers = {
-    "User-Agent": "Mozilla/5.0"
-}
+print("🔎 Abrindo página...")
 
+options = Options()
+options.add_argument("--headless")
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
 
-# 🔍 descobre link real
-def expandir_link(url):
-    try:
-        r = requests.get(url, headers=headers, allow_redirects=True)
-        return r.url
-    except:
-        return None
+driver = webdriver.Chrome(options=options)
 
+driver.get(URL)
 
-# 🔍 extrai ID do produto
-def extrair_id(url):
-    match = re.search(r"MLB-?(\d+)", url)
-    if match:
-        return f"MLB{match.group(1)}"
-    return None
+time.sleep(5)
 
+print("📜 Rolando página...")
 
-# 🔍 busca produto na API
-def get_produto(item_id):
-    try:
-        url = f"https://api.mercadolibre.com/items/{item_id}"
-        r = requests.get(url)
-        return r.json()
-    except:
-        return None
+# rola algumas vezes pra carregar produtos
+for _ in range(3):
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(3)
+
+links = []
+
+print("🔗 Coletando links...")
+
+# pega todos os links meli.la
+elements = driver.find_elements(By.TAG_NAME, "a")
+
+for el in elements:
+    href = el.get_attribute("href")
+    if href and "meli.la" in href:
+        links.append(href)
+
+# remove duplicados
+links = list(set(links))
+
+print(f"✅ Links encontrados: {len(links)}")
 
 
 mensagens = []
 
-print("🔎 Processando links...")
-
-for link in LINKS:
-    print(f"➡️ Link: {link}")
-
-    real = expandir_link(link)
-    if not real:
-        print("❌ Não expandiu")
-        continue
-
-    item_id = extrair_id(real)
-    if not item_id:
-        print("❌ Não achou ID")
-        continue
-
-    produto = get_produto(item_id)
-    if not produto or "title" not in produto:
-        print("❌ Produto inválido")
-        continue
-
-    titulo = produto.get("title")
-    preco = produto.get("price")
-
-    # 🔥 usa SEU link afiliado original
-    mensagem = f"""🔥 *OFERTA* 🔥
-
-🛍️ {titulo}
-💰 R$ {preco}
+for link in links:
+    mensagens.append(f"""🔥 *OFERTA* 🔥
 
 👉 {link}
 
-"""
-
-    mensagens.append(mensagem)
+""")
 
 
-print(f"✅ Produtos processados: {len(mensagens)}")
-
-
-# garante que não fica vazio
 if not mensagens:
     mensagens.append("⚠️ Nenhum produto encontrado.")
 
-
-# 💾 salva arquivo
 with open("promocoes.txt", "w", encoding="utf-8") as f:
     f.write("\n\n".join(mensagens))
 
-
-print("📁 Arquivo pronto para WhatsApp!")
+print("📁 Arquivo pronto!")
+driver.quit()

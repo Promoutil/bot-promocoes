@@ -1,9 +1,9 @@
 name: Rodar Bot Promoções
 
 on:
-  schedule:
-    - cron: '*/30 * * * *'  # roda a cada 30 minutos
   workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
 
 jobs:
   run-bot:
@@ -11,16 +11,21 @@ jobs:
 
     steps:
       - name: Baixar código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Instalar Python
-        uses: actions/setup-python@v4
+      - name: Configurar Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
       - name: Instalar dependências
-        run: |
-          pip install requests beautifulsoup4
+        run: pip install requests beautifulsoup4
 
       - name: Rodar bot
         run: python bot.py
+
+      - name: Upload promocoes
+        uses: actions/upload-artifact@v4
+        with:
+          name: promocoes
+          path: promocoes.txt

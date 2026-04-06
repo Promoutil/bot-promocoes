@@ -38,22 +38,22 @@ def formatar(prod):
     if not titulo or not preco:
         return None
 
-    # calcula desconto
+    # monta preço
     if original:
         desconto = int((original - preco) / original * 100)
-        preco_texto = f"De R$ {original} por R$ {preco} ({desconto}% OFF)"
+        preco_texto = f"💰 De R$ {original} por R$ {preco} ({desconto}% OFF)"
     else:
         desconto = 0
-        preco_texto = f"R$ {preco}"
+        preco_texto = f"💰 R$ {preco}"
 
-    # 🔥 filtro inteligente
-    if desconto < 20 and preco > 100:
+    # 🔥 REGRA NOVA (garante conteúdo)
+    if preco > 200:
         return None
 
-    msg = f"""🔥 SUPER OFERTA
+    msg = f"""🔥 *OFERTA DO DIA* 🔥
 
 🛍️ {titulo}
-💰 {preco_texto}
+{preco_texto}
 
 👉 {link}
 

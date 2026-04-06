@@ -3,7 +3,7 @@ name: Rodar Bot Promoções
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: "*/30 * * * *"
 
 jobs:
   run-bot:
@@ -11,20 +11,18 @@ jobs:
 
     steps:
       - name: Baixar código
-        uses: actions/checkout@v4
-
-      - name: Configurar Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+        uses: actions/checkout@v3
 
       - name: Instalar dependências
-        run: pip install requests beautifulsoup4
+        run: |
+          pip install -r requirements.txt
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser chromium-chromedriver
 
       - name: Rodar bot
         run: python bot.py
 
-      - name: Upload promocoes
+      - name: Upload arquivo
         uses: actions/upload-artifact@v4
         with:
           name: promocoes

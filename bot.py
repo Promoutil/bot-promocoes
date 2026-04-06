@@ -1,63 +1,48 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-import time
+from playwright.sync_api import sync_playwright
 
 URL = "https://www.mercadolivre.com.br/social/novaazul"
 
 print("🔎 Abrindo página...")
 
-options = Options()
-options.add_argument("--headless")
-options.add_argument("--no-sandbox")
-options.add_argument("--disable-dev-shm-usage")
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True)
+    page = browser.new_page()
 
-driver = webdriver.Chrome(options=options)
+    page.goto(URL)
+    page.wait_for_timeout(5000)
 
-driver.get(URL)
+    print("📜 Rolando página...")
 
-time.sleep(5)
+    for _ in range(5):
+        page.mouse.wheel(0, 5000)
+        page.wait_for_timeout(2000)
 
-print("📜 Rolando página...")
+    print("🔗 Coletando links...")
 
-# rola algumas vezes pra carregar produtos
-for _ in range(3):
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(3)
+    links = page.eval_on_selector_all(
+        "a",
+        "elements => elements.map(e => e.href)"
+    )
 
-links = []
+    links = list(set([l for l in links if "meli.la" in l]))
 
-print("🔗 Coletando links...")
+    print(f"✅ Links encontrados: {len(links)}")
 
-# pega todos os links meli.la
-elements = driver.find_elements(By.TAG_NAME, "a")
+    mensagens = []
 
-for el in elements:
-    href = el.get_attribute("href")
-    if href and "meli.la" in href:
-        links.append(href)
-
-# remove duplicados
-links = list(set(links))
-
-print(f"✅ Links encontrados: {len(links)}")
-
-
-mensagens = []
-
-for link in links:
-    mensagens.append(f"""🔥 *OFERTA* 🔥
+    for link in links:
+        mensagens.append(f"""🔥 *OFERTA* 🔥
 
 👉 {link}
 
 """)
 
+    if not mensagens:
+        mensagens.append("⚠️ Nenhum produto encontrado.")
 
-if not mensagens:
-    mensagens.append("⚠️ Nenhum produto encontrado.")
+    with open("promocoes.txt", "w", encoding="utf-8") as f:
+        f.write("\n\n".join(mensagens))
 
-with open("promocoes.txt", "w", encoding="utf-8") as f:
-    f.write("\n\n".join(mensagens))
+    browser.close()
 
 print("📁 Arquivo pronto!")
-driver.quit()
